@@ -1,0 +1,19 @@
+{
+  "name": "FIT Stats — просмотр FIT-треков",
+  "short_name": "FIT Stats",
+  "description": "Просмотр и анализ .fit файлов в браузере: карта треков, сводка, метрики и графики. Работает офлайн.",
+  "lang": "ru-RU",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

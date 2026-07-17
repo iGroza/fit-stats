@@ -1,0 +1,7 @@
+User-agent: *
+Disallow:
+
+User-agent: Yandex
+Clean-param: utm_source&utm_medium&utm_campaign&utm_content&utm_term&yclid&gclid&fbclid /
+
+Sitemap: https://fit.igroza.su/sitemap.xml
