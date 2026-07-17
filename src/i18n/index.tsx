@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { DICTS } from './dict';
 import type { Dict, Locale } from './dict';
 
-const STORAGE_KEY = 'fit-tracker-locale';
+const STORAGE_KEY = 'fit-stats-locale';
 
 /* ───────────────────────── Форматтеры под локаль ──────────────────────── */
 

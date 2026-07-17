@@ -9,7 +9,7 @@
 export const SITE_URL = 'https://fit.igroza.su';
 
 // TODO(owner): заменить на реальный репозиторий.
-export const GITHUB_URL = 'https://github.com/igroza/fit-tracker';
+export const GITHUB_URL = 'https://github.com/igroza/fit-stats';
 
 export const TELEGRAM_URL = 'https://t.me/igroza';
 

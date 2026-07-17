@@ -21,7 +21,7 @@ export interface SavedTrackMeta {
   moving: number;
 }
 
-const DB_NAME = 'fit-tracker';
+const DB_NAME = 'fit-stats';
 const DB_VERSION = 1;
 const META = 'meta';
 const FILES = 'files';
