@@ -1,0 +1,234 @@
+/* Floating Pill Navigation (DESIGN.md) — fixed bottom-center glass pill. */
+.pill-nav {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(16px, 3vw, 24px);
+  transform: translateX(-50%);
+  z-index: 100;
+  width: min(960px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-12);
+  pointer-events: none;
+}
+
+.pill-nav__bar {
+  pointer-events: auto;
+  width: 100%;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-16);
+  padding: 8px 8px 8px 20px;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 20, 22, 0.78);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(229, 229, 229, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), var(--glass-inset);
+}
+
+/* — brand — */
+.pill-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.pill-nav__mark {
+  display: grid;
+  place-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(229, 229, 229, 0.28);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--color-paper);
+  overflow: hidden;
+}
+.pill-nav__mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pill-nav__name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-bone);
+  white-space: nowrap;
+}
+
+/* — элементы, появляющиеся только когда загружены треки — */
+.pill-nav__appear { display: none !important; }
+.pill-nav__appear.is-shown {
+  display: flex !important;
+  animation: pill-nav-appear 0.5s var(--ease-out);
+}
+@keyframes pill-nav-appear {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.pill-nav__export.is-shown { display: inline-flex !important; }
+.pill-nav__export { flex-shrink: 0; height: 38px; }
+
+/* — links — */
+.pill-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline: auto;
+}
+.pill-nav__link {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(229, 229, 229, 0.7);
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  transition: color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.pill-nav__link:hover { color: var(--color-paper); background: rgba(255, 255, 255, 0.05); }
+.pill-nav__link.is-active { color: var(--color-paper); background: rgba(255, 255, 255, 0.08); }
+
+.pill-nav__cta { flex-shrink: 0; }
+
+/* — язык и GitHub — круглые кнопки в pill-nav — */
+.pill-nav__lang,
+.pill-nav__github {
+  width: 38px; height: 38px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-ash);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: color 0.2s var(--ease), background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.pill-nav__github { font-size: 1.05rem; }
+.pill-nav__lang:hover,
+.pill-nav__github:hover {
+  color: var(--color-paper);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(229, 229, 229, 0.24);
+}
+
+/* — burger (hidden on desktop) — animated three-line → cross — */
+.pill-nav__burger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--color-bone);
+}
+.pill-nav__burger-box {
+  position: relative;
+  width: 20px;
+  height: 14px;
+}
+.pill-nav__burger-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-bone);
+  transition: transform 0.32s var(--ease), opacity 0.2s var(--ease);
+}
+.pill-nav__burger-line:nth-child(1) { top: 0; }
+.pill-nav__burger-line:nth-child(2) { top: 6px; }
+.pill-nav__burger-line:nth-child(3) { top: 12px; }
+.pill-nav__burger.is-open .pill-nav__burger-line:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.pill-nav__burger.is-open .pill-nav__burger-line:nth-child(2) { opacity: 0; transform: scaleX(0.4); }
+.pill-nav__burger.is-open .pill-nav__burger-line:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+/* — mobile sheet — */
+.pill-nav__sheet {
+  pointer-events: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--sp-12);
+  border-radius: var(--radius-card);
+  background: rgba(20, 20, 22, 0.9);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(229, 229, 229, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: translateY(16px) scale(0.96);
+  transform-origin: bottom center;
+  transition: opacity 0.32s var(--ease), transform 0.42s cubic-bezier(0.34, 1.4, 0.5, 1), visibility 0s linear 0.42s;
+  visibility: hidden;
+}
+.pill-nav__sheet.is-open {
+  pointer-events: auto;
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition: opacity 0.32s var(--ease), transform 0.42s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+.pill-nav__sheet-link {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(229, 229, 229, 0.78);
+  padding: 12px 16px;
+  border-radius: var(--radius-input);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: color 0.2s var(--ease), background 0.2s var(--ease),
+    opacity 0.3s var(--ease), transform 0.35s var(--ease);
+}
+.pill-nav__sheet.is-open .pill-nav__sheet-link { opacity: 1; transform: none; }
+.pill-nav__sheet.is-open .pill-nav__sheet-link:nth-child(1) { transition-delay: 0.05s; }
+.pill-nav__sheet.is-open .pill-nav__sheet-link:nth-child(2) { transition-delay: 0.10s; }
+.pill-nav__sheet.is-open .pill-nav__sheet-link:nth-child(3) { transition-delay: 0.15s; }
+.pill-nav__sheet.is-open .pill-nav__sheet-link:nth-child(4) { transition-delay: 0.20s; }
+.pill-nav__sheet.is-open .pill-nav__sheet-link:nth-child(5) { transition-delay: 0.25s; }
+.pill-nav__sheet-link:hover,
+.pill-nav__sheet-link.is-active { color: var(--color-paper); background: rgba(255, 255, 255, 0.06); }
+
+@media (max-width: 760px) {
+  .pill-nav__bar { gap: var(--sp-8); padding-left: 12px; }
+  .pill-nav__links,
+  .pill-nav__links.is-shown { display: none !important; }
+  .pill-nav__burger.is-shown { display: inline-flex !important; }
+  /* на мобиле у экспорта остаётся только иконка Excel */
+  .pill-nav__export.is-shown {
+    width: 38px;
+    padding-inline: 0;
+    font-size: 0;
+    gap: 0;
+    border-radius: 50%;
+  }
+  .pill-nav__export.is-shown i { font-size: 1rem; }
+  .pill-nav__name { display: none; }
+  .pill-nav__github { display: none; } /* дублируется в футере */
+  .pill-nav__cta { margin-inline: auto; }
+}
+@media (min-width: 761px) {
+  .pill-nav__sheet { display: none; }
+  /* Бургер — только для мобильной вёрстки: .is-shown его не воскрешает. */
+  .pill-nav__burger,
+  .pill-nav__burger.is-shown { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-nav__sheet { transition: none !important; }
+}

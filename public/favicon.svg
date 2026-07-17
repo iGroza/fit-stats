@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="FIT Stats">
+  <defs>
+    <radialGradient id="glow" cx="62%" cy="24%" r="80%">
+      <stop offset="0%" stop-color="#6b62f2" stop-opacity="0.55" />
+      <stop offset="45%" stop-color="#4867af" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#0a0a0a" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="route" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4ade80" />
+      <stop offset="55%" stop-color="#6b62f2" />
+      <stop offset="100%" stop-color="#a78bfa" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="#0a0a0a" />
+  <rect width="512" height="512" rx="120" fill="url(#glow)" />
+  <rect x="6" y="6" width="500" height="500" rx="114" fill="none" stroke="#e5e5e5" stroke-opacity="0.12" stroke-width="12" />
+  <path d="M148 368 C 130 292, 236 316, 244 244 C 252 176, 330 214, 360 156"
+        fill="none" stroke="url(#route)" stroke-width="30" stroke-linecap="round" />
+  <circle cx="148" cy="368" r="34" fill="#4ade80" stroke="#0a0a0a" stroke-width="10" />
+  <circle cx="360" cy="156" r="34" fill="none" stroke="#a78bfa" stroke-width="16" />
+  <circle cx="360" cy="156" r="7" fill="#e5e5e5" />
+</svg>

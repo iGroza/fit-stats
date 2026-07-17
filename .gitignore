@@ -1,0 +1,9 @@
+.claude
+dist
+workout-routes
+*.fit
+*.gpx
+.DS_Store
+skills-lock.json
+*.tsbuildinfo
+node_modules
