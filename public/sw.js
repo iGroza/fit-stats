@@ -40,6 +40,41 @@ async function trimCache(cache) {
   for (let i = 0; i < remove; i++) await cache.delete(keys[i]);
 }
 
+/** Сохранить успешный тайл в кэш и при переполнении подрезать. */
+async function store(cache, req, resp) {
+  await cache.put(req, resp);
+  if (++sinceTrim >= 100) {
+    sinceTrim = 0;
+    await trimCache(cache);
+  }
+}
+
+async function handleTile(event, req) {
+  const cache = await caches.open(TILE_CACHE);
+  const cached = await cache.match(req, { ignoreVary: true });
+  if (cached) return cached; // главный выигрыш: мгновенно из кэша
+
+  // Промах — идём в сеть. Успех кэшируем; ошибки/аборты НЕ маскируем
+  // Response.error(): пробрасываем как при обычной загрузке, чтобы Leaflet
+  // мог перезапросить тайл, а панорамирование не сыпало ложными ошибками.
+  const fromNet = async () => {
+    const resp = await fetch(req);
+    if (resp && resp.status === 200 && resp.type !== 'opaque') {
+      event.waitUntil(store(cache, req, resp.clone()));
+    }
+    return resp;
+  };
+
+  try {
+    return await fromNet();
+  } catch (err) {
+    // Аборт при пане/зуме — тайл уже не нужен, повторять смысла нет.
+    if (req.signal && req.signal.aborted) throw err;
+    // Разовый транзиентный сбой сети — одна повторная попытка.
+    return await fromNet();
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -52,26 +87,5 @@ self.addEventListener('fetch', (event) => {
   }
   if (!TILE_HOST.test(url.hostname)) return;
 
-  event.respondWith(
-    (async () => {
-      const cache = await caches.open(TILE_CACHE);
-      const cached = await cache.match(req, { ignoreVary: true });
-      if (cached) return cached;
-      try {
-        const resp = await fetch(req);
-        // Кэшируем только успешные ответы (CORS/basic), не opaque.
-        if (resp && resp.status === 200 && resp.type !== 'opaque') {
-          await cache.put(req, resp.clone());
-          if (++sinceTrim >= 100) {
-            sinceTrim = 0;
-            event.waitUntil(trimCache(cache));
-          }
-        }
-        return resp;
-      } catch (err) {
-        // Сеть недоступна — отдаём кэш, если вдруг есть, иначе ошибку.
-        return cached || Response.error();
-      }
-    })()
-  );
+  event.respondWith(handleTile(event, req));
 });
