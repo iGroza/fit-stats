@@ -5,12 +5,13 @@ import { AnimatedHeading } from '../components/common/AnimatedHeading';
 import { Dropzone } from '../components/tool/Dropzone';
 import { History } from '../components/tool/History';
 import { SummaryCards } from '../components/tool/SummaryCards';
+import { HrZones } from '../components/tool/HrZones';
 import { TrackMap } from '../components/tool/TrackMap';
 import { Charts } from '../components/tool/Charts';
 import { TrackList } from '../components/tool/TrackList';
 import { useRevealOnScroll } from '../hooks/useRevealOnScroll';
 import { APP_NAME, SITE_URL } from '../config';
-import { computeTotals, isPaceSport } from '../fit/stats';
+import { aggregateHrZones, computeTotals, isPaceSport } from '../fit/stats';
 import { useI18n } from '../i18n';
 import { useTracks } from '../state/TracksContext';
 
@@ -27,6 +28,7 @@ export const HomePage = () => {
   const busy = busyCount > 0;
 
   const totals = useMemo(() => computeTotals(visible), [visible]);
+  const hrZones = useMemo(() => aggregateHrZones(visible), [visible]);
   const paceMode = visible.every((tr) => isPaceSport(tr.summary.sport));
   const hasTracks = tracks.length > 0;
 
@@ -128,6 +130,7 @@ export const HomePage = () => {
                 lead={t.sections.summary.lead(visible.length, tracks.length)}
               />
               <SummaryCards totals={totals} paceMode={paceMode} />
+              {hrZones && <HrZones zones={hrZones} />}
             </div>
           </section>
 

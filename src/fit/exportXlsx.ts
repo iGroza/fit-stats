@@ -7,7 +7,14 @@ import type { Fmt } from '../i18n';
 import { sportLabel } from '../i18n';
 import type { Dict } from '../i18n/dict';
 import { renderMetricChartPng } from './chartImage';
-import { computeSplits, detectIntervals, isPaceSport } from './stats';
+import {
+  aggregateHrZones,
+  computeHrZones,
+  computeSplits,
+  detectIntervals,
+  isPaceSport,
+} from './stats';
+import type { HrZone } from './stats';
 import { METRICS } from './types';
 import type { Split, Track } from './types';
 
@@ -164,6 +171,40 @@ const addSplitsSheet = (
   addStyledTable(ws, header, rows, 4);
 };
 
+/** Лист «Зоны пульса»: по каждому треку (и суммарно) — время и доля в зонах. */
+const addHrZonesSheet = (
+  wb: import('exceljs').Workbook,
+  tracks: Track[],
+  t: Dict,
+  fmt: Fmt
+): void => {
+  const zoneRows = (label: string, zones: HrZone[]): Row[] => {
+    const total = zones.reduce((s, z) => s + z.time, 0) || 1;
+    return zones.map((z, i) => [
+      i === 0 ? label : undefined,
+      t.hrZones.zone(z.zone),
+      `${z.min}–${z.max}`,
+      fmt.clock(z.time),
+      Math.floor((z.time / total) * 100),
+    ]);
+  };
+
+  const rows: Row[] = [];
+  if (tracks.length > 1) {
+    const agg = aggregateHrZones(tracks);
+    if (agg) rows.push(...zoneRows(t.xlsx.hrZonesAll, agg));
+  }
+  for (const tr of tracks) {
+    const zones = computeHrZones(tr);
+    if (zones) rows.push(...zoneRows(tr.fileName, zones));
+  }
+  if (!rows.length) return;
+
+  const ws = wb.addWorksheet(t.xlsx.hrZonesSheet, { views: [{ state: 'frozen', ySplit: 4 }] });
+  addTitle(ws, t, t.xlsx.hrZonesSubtitle, t.xlsx.hrZonesHeader.length);
+  addStyledTable(ws, [...t.xlsx.hrZonesHeader], rows, 4);
+};
+
 /** Экспорт всех треков в один .xlsx: сводка + графики + записи и сплиты. */
 export async function exportTracksXlsx(tracks: Track[], t: Dict, fmt: Fmt): Promise<void> {
   const ExcelJS = await import('exceljs');
@@ -204,6 +245,9 @@ export async function exportTracksXlsx(tracks: Track[], t: Dict, fmt: Fmt): Prom
   const wsSummary = wb.addWorksheet(t.xlsx.summarySheet, { views: [{ state: 'frozen', ySplit: 4 }] });
   addTitle(wsSummary, t, t.xlsx.summarySubtitle, t.xlsx.summaryHeader.length);
   addStyledTable(wsSummary, [...t.xlsx.summaryHeader], summaryRows, 4);
+
+  /* ── Зоны пульса ── */
+  addHrZonesSheet(wb, tracks, t, fmt);
 
   /* Много треков: не пишем лист «каждый» (сотни линий) и не дублируем avg. */
   const manyTracks = tracks.length > 12;

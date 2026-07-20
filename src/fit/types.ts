@@ -87,6 +87,8 @@ export interface TrackSummary {
   /** Анаэробный training effect (0–5). */
   anaerobicTrainingEffect?: number;
   vo2max?: number;
+  /** Время в зонах пульса 1–5, с (из устройства, если писалось). */
+  hrZoneTimes?: number[];
 }
 
 /** Загруженный и разобранный .fit-файл. */

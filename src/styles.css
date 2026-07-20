@@ -418,12 +418,12 @@ ul { list-style: none; padding: 0; }
   background: var(--color-graphite);
   z-index: 0; /* держим leaflet ниже pill-nav */
 }
-/* кнопка центровки по всем видимым трекам */
-.track-map__recenter {
+/* кнопки поверх карты: развернуть (сверху) + центровка (под ней) */
+.track-map__recenter,
+.track-map__expand {
   position: absolute;
-  top: 20px;
   right: 20px;
-  z-index: 2;
+  z-index: 401; /* выше тайлов и контролов leaflet */
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -438,10 +438,68 @@ ul { list-style: none; padding: 0; }
   font-size: 0.95rem;
   transition: color 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.2s var(--ease);
 }
-.track-map__recenter:hover {
+.track-map__expand { top: 20px; }
+.track-map__recenter { top: 68px; }
+.track-map__recenter:hover,
+.track-map__expand:hover {
   color: var(--color-paper);
   border-color: rgba(229, 229, 229, 0.3);
   transform: scale(1.06);
+}
+
+/* переключатель базовых слоёв — пилюли в левом верхнем углу карты */
+.map-layers {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 401;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: calc(100% - 80px);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: rgba(20, 20, 22, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(229, 229, 229, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.map-layers__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  color: var(--color-ash);
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.map-layers__btn:hover { color: var(--color-paper); }
+.map-layers__btn.is-active {
+  background: var(--color-indigo);
+  color: var(--color-paper);
+}
+/* на узких экранах прячем подписи слоёв — остаются иконки */
+@media (max-width: 560px) {
+  .map-layers__btn span { display: none; }
+  .map-layers__btn { padding: 8px; }
+}
+
+/* карта на весь экран — оверлей выше модалки (z-index 200) */
+.track-map.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+}
+.track-map.is-fullscreen .track-map__canvas {
+  height: 100dvh;
+  border-radius: 0;
 }
 
 .track-map__empty {
@@ -622,6 +680,188 @@ ul { list-style: none; padding: 0; }
 .modal__danger:hover { color: #f25e8a; border-color: rgba(242, 94, 138, 0.4); }
 .modal .history__list { max-height: none; flex: 1; overflow-y: auto; }
 
+/* ── модалка деталей трека: почти на весь экран, со скроллом внутри ── */
+.track-modal {
+  position: relative;
+  width: min(1080px, 100%);
+  max-height: min(92vh, 960px);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-card);
+  background: rgba(20, 20, 22, 0.94);
+  animation: modal-pop 0.3s var(--ease-out);
+  overflow: hidden;
+}
+.track-modal__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-12);
+  padding: var(--sp-20) var(--sp-24);
+  border-bottom: 1px solid var(--border);
+}
+.track-modal__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-20);
+  padding: var(--sp-20) var(--sp-24) var(--sp-24);
+}
+.track-modal__map .track-map {
+  padding: 0;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.track-modal__map .track-map__canvas { height: clamp(280px, 44vh, 520px); }
+.track-modal__timeline { display: flex; flex-direction: column; gap: var(--sp-12); }
+/* в модалке блок деталей не рисует свою верхнюю границу-разделитель дважды */
+.track-modal__body .track-row__details { padding-top: 0; border-top: none; margin-top: 0; }
+
+@media (max-width: 700px) {
+  .track-modal {
+    width: 100%;
+    max-height: none;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .track-modal__head { padding: var(--sp-16); }
+  .track-modal__body {
+    padding: var(--sp-16) var(--sp-16) calc(var(--sp-16) + env(safe-area-inset-bottom));
+  }
+}
+
+/* ── таймлайн трека ── */
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-12);
+}
+.timeline__play { flex-shrink: 0; }
+.timeline__range {
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--color-indigo) var(--fill, 0%),
+    rgba(255, 255, 255, 0.12) var(--fill, 0%)
+  );
+  cursor: pointer;
+}
+.timeline__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-paper);
+  border: 3px solid var(--color-indigo);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+}
+.timeline__range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-paper);
+  border: 3px solid var(--color-indigo);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+}
+.timeline__range:focus-visible { outline: 2px solid var(--color-indigo); outline-offset: 4px; }
+.timeline__readout {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.timeline__readout b { font-family: var(--font-ui); font-weight: 500; color: var(--color-paper); }
+.timeline__readout small { color: var(--text-muted); font-size: 0.72rem; }
+.timeline__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-8);
+}
+.timeline__chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-8) var(--sp-12);
+  border-radius: var(--radius-icon);
+  background: rgba(29, 29, 29, 0.72);
+  border: 1px solid var(--border);
+  min-width: 84px;
+}
+.timeline__chip small {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.timeline__chip b {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  color: var(--color-bone);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ════════════════════════════════ HR ZONES ═══════════════════════════ */
+.hr-zones { padding: var(--sp-24); }
+/* в сводке — отдельная карточка с отступом от карточек-метрик */
+.stats-grid + .hr-zones { margin-top: var(--sp-16); }
+.hr-zones__title {
+  font-size: var(--text-caption);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-20);
+}
+.hr-zones__list { display: flex; flex-direction: column; gap: var(--sp-20); }
+.hr-zone { display: flex; flex-direction: column; gap: var(--sp-8); }
+.hr-zone__top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-12);
+  font-variant-numeric: tabular-nums;
+}
+.hr-zone__name {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 1.0625rem;
+}
+.hr-zone__pct {
+  margin-left: auto;
+  color: var(--color-paper);
+  font-family: var(--font-ui);
+  font-weight: 500;
+}
+.hr-zone__time {
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  min-width: 72px;
+  text-align: right;
+}
+.hr-zone__range { color: var(--text-muted); font-size: var(--text-caption); }
+.hr-zone__bar {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.hr-zone__fill {
+  height: 100%;
+  min-width: 8px;
+  border-radius: var(--radius-pill);
+  transition: width 0.4s var(--ease);
+}
+
 .history-open { margin-top: var(--sp-16); height: 44px; }
 
 /* — тулбар модалки истории: «выбрать все» + поиск — */
@@ -743,14 +983,6 @@ ul { list-style: none; padding: 0; }
   .top-github span { display: none; }
 }
 
-/* ════════════════════════════════ COLLAPSE (гармошка) ═════════════════ */
-.collapse {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.45s var(--ease-out);
-}
-.collapse.is-open { grid-template-rows: 1fr; }
-.collapse > div { overflow: hidden; min-height: 0; }
 
 /* ════════════════════════════════ HISTORY ═════════════════════════════ */
 .history__search {
@@ -892,8 +1124,7 @@ ul { list-style: none; padding: 0; }
 .track-row.is-selected { border-color: rgba(107, 98, 242, 0.45); }
 /* Скрытый трек остаётся в списке (можно вернуть глазом) — приглушается
    только контент; кнопки действий остаются контрастными. */
-.track-row.is-hidden .track-row__main,
-.track-row.is-hidden .collapse { opacity: 0.45; }
+.track-row.is-hidden .track-row__main { opacity: 0.45; }
 
 .track-row__top {
   display: flex;
@@ -965,7 +1196,6 @@ ul { list-style: none; padding: 0; }
   font-size: 0.8rem;
   transition: transform 0.3s var(--ease);
 }
-.track-row__chevron.is-open { transform: rotate(180deg); }
 
 .track-row__actions {
   display: flex; gap: var(--sp-8);
@@ -1035,7 +1265,19 @@ ul { list-style: none; padding: 0; }
   color: var(--text-muted);
 }
 .splits__empty { color: var(--text-muted); font-size: var(--text-caption); }
-.table-scroll { overflow-x: auto; }
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(229, 229, 229, 0.25) transparent;
+}
+.table-scroll::-webkit-scrollbar { height: 8px; }
+.table-scroll::-webkit-scrollbar-thumb {
+  background: rgba(229, 229, 229, 0.2);
+  border-radius: var(--radius-pill);
+}
+.splits__table { min-width: 520px; }
 .splits__table {
   width: 100%;
   border-collapse: collapse;
@@ -1256,6 +1498,13 @@ a.footer__link:hover { color: var(--color-paper); }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .charts-grid { grid-template-columns: 1fr; }
   .track-row__metrics { flex-basis: 100%; margin-left: 0; padding: var(--sp-8) var(--sp-12) 0; }
+  /* Широкие пилюль-переключатели не должны распирать страницу — скроллим их */
+  .charts-toolbar .seg,
+  .track-list__sort {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
 }
 
 @media (max-width: 560px) {
@@ -1263,6 +1512,15 @@ a.footer__link:hover { color: var(--color-paper); }
   .stats-grid { grid-template-columns: 1fr; }
   .footer__grid { flex-direction: column; }
   .track-row__main { flex-wrap: wrap; }
+  /* Метрики строки трека не тянут страницу вширь — раскладываем в сетку 2×N */
+  .track-row__title { min-width: 0; flex-basis: 100%; }
+  .track-row__metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sp-12) var(--sp-16);
+    width: 100%;
+  }
+  .track-row__metric { min-width: 0; }
 }
 
 /* ════════════════════════════════ MOTION SAFETY ══════════════════════ */

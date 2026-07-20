@@ -29,8 +29,10 @@ const AXIS_STYLE = { fill: '#686868', fontSize: 12, fontFamily: 'Geist, sans-ser
 const GRID_COLOR = 'rgba(229, 229, 229, 0.07)';
 
 const paceLabel = (v: number): string => {
-  const m = Math.floor(v);
-  const s = Math.round((v - m) * 60);
+  // Округляем общее число секунд, иначе 6.9998 мин/км печатает «6:60».
+  const total = Math.round(v * 60);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 };
 

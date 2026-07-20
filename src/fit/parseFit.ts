@@ -195,18 +195,32 @@ const buildSummary = (data: any, points: TrackPoint[]): TrackSummary => {
   const hrs = pick(points, 'hr');
   const gain = elevationGain(points);
 
+  // Время в зонах пульса из устройства. FIT пишет массив с индексом 0 =
+  // «ниже зоны 1», далее зоны 1–5, поэтому берём срез [1..5].
+  const rawZones = session.time_in_hr_zone;
+  const hrZoneTimes: number[] | undefined = Array.isArray(rawZones)
+    ? rawZones.length >= 6
+      ? rawZones.slice(1, 6).map((v: unknown) => (typeof v === 'number' ? v : 0))
+      : rawZones.length === 5
+        ? rawZones.map((v: unknown) => (typeof v === 'number' ? v : 0))
+        : undefined
+    : undefined;
+
   return {
     sport: session.sport,
     startTime: toDate(session.start_time) ?? points[0]?.time,
     distance,
     elapsed,
     moving,
-    // speedUnit: 'km/h' — avg/max_speed уже в км/ч; фолбэк: distance(m)/time(s)*3.6.
+    // Средняя скорость = дистанция / время в движении (как в сводке и сплитах).
+    // Полю session.avg_speed доверяем только как фолбэку: некоторые прошивки
+    // (напр. Zepp) пишут туда явно заниженное значение, расходящееся с треком.
     avgSpeed:
+      (moving > 0 && distance > 0 ? (distance / moving) * 3.6 : undefined) ??
       (typeof session.avg_speed === 'number' && session.avg_speed > 0
         ? session.avg_speed
         : undefined) ??
-      (moving > 0 && distance > 0 ? (distance / moving) * 3.6 : avg(speeds)),
+      avg(speeds),
     maxSpeed:
       (typeof session.max_speed === 'number' && session.max_speed > 0
         ? session.max_speed
@@ -229,6 +243,7 @@ const buildSummary = (data: any, points: TrackPoint[]): TrackSummary => {
     trainingEffect: session.total_training_effect,
     anaerobicTrainingEffect: session.total_anaerobic_training_effect,
     vo2max: session.vo2_max ?? data?.user_metrics?.[0]?.vo2_max,
+    hrZoneTimes: hrZoneTimes?.some((v) => v > 0) ? hrZoneTimes : undefined,
   };
 };
 

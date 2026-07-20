@@ -6,6 +6,7 @@ import { useI18n, sportLabel } from "../../i18n";
 import type { Dict } from "../../i18n/dict";
 import type { Fmt } from "../../i18n";
 import { useTracks } from "../../state/TracksContext";
+import { TrackDetailModal } from "./TrackDetailModal";
 
 const SPORT_ICONS: Record<string, string> = {
   running: "fa-person-running",
@@ -257,7 +258,7 @@ const DetailStat = ({
     </div>
   );
 
-const TrackDetails = ({ track }: { track: Track }) => {
+export const TrackDetails = ({ track }: { track: Track }) => {
   const { t, fmt } = useI18n();
   const s = track.summary;
   const pace = isPaceSport(s.sport);
@@ -372,20 +373,18 @@ const RowMetric = ({
 
 interface TrackRowProps {
   track: Track;
-  open: boolean;
   t: Dict;
   fmt: Fmt;
-  onToggleOpen: (id: string) => void;
+  onOpen: (id: string) => void;
   onToggleVisible: (id: string) => void;
   onRemove: (id: string) => void;
 }
 
 const TrackRow = memo(function TrackRow({
   track,
-  open,
   t,
   fmt,
-  onToggleOpen,
+  onOpen,
   onToggleVisible,
   onRemove,
 }: TrackRowProps) {
@@ -395,15 +394,12 @@ const TrackRow = memo(function TrackRow({
     /* ВАЖНО: без data-reveal — reveal-observer пишет класс is-visible прямо
        в DOM, а React при смене className (toggle глаза) его стирает,
        и строка навсегда проваливается в opacity:0. */
-    <div
-      className={`track-row glass${track.visible ? "" : " is-hidden"}${open ? " is-selected" : ""}`}
-    >
+    <div className={`track-row glass${track.visible ? "" : " is-hidden"}`}>
       <div className="track-row__top">
         <button
           type="button"
           className="track-row__main"
-          onClick={() => onToggleOpen(track.id)}
-          aria-expanded={open}
+          onClick={() => onOpen(track.id)}
         >
           <span
             className="track-row__dot"
@@ -471,7 +467,7 @@ const TrackRow = memo(function TrackRow({
             />
           </span>
           <i
-            className={`fa-solid fa-chevron-down track-row__chevron${open ? " is-open" : ""}`}
+            className="fa-solid fa-chevron-right track-row__chevron"
             aria-hidden="true"
           />
         </button>
@@ -500,9 +496,6 @@ const TrackRow = memo(function TrackRow({
           </button>
         </div>
       </div>
-      <div className={`collapse${open ? " is-open" : ""}`}>
-        <div>{open && <TrackDetails track={track} />}</div>
-      </div>
     </div>
   );
 });
@@ -516,10 +509,8 @@ const SORT_KEYS: TrackSortKey[] = [
   "pace",
 ];
 
-/** Оценка высоты свёрнутой строки для виртуализации. */
+/** Оценка высоты строки для виртуализации (строки одинаковой высоты). */
 const ROW_ESTIMATE = 108;
-/** Оценка раскрытой гармошки (детали + отсечки). */
-const ROW_OPEN_ESTIMATE = 560;
 /** Порог, после которого включаем windowed-рендер. */
 const VIRTUAL_THRESHOLD = 24;
 
@@ -527,7 +518,7 @@ const VIRTUAL_THRESHOLD = 24;
 export const TrackList = () => {
   const { t, fmt } = useI18n();
   const { tracks, toggleTrack, setAllVisible, removeTrack, clearTracks } = useTracks();
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<TrackSortKey>("date");
   const [sortDir, setSortDir] = useState<1 | -1>(-1); // date desc by default
 
@@ -537,8 +528,10 @@ export const TrackList = () => {
   );
   const allVisible = tracks.length > 0 && tracks.every((tr) => tr.visible);
 
-  const onToggleOpen = (id: string) =>
-    setOpenId((prev) => (prev === id ? null : id));
+  const onOpen = (id: string) => setSelectedId(id);
+  const selectedTrack = selectedId
+    ? tracks.find((tr) => tr.id === selectedId) ?? null
+    : null;
 
   const onSort = (key: TrackSortKey) => {
     if (key === sortKey) setSortDir((d) => (d === 1 ? -1 : 1));
@@ -554,22 +547,14 @@ export const TrackList = () => {
     720,
     Math.max(320, Math.min(sorted.length, 10) * ROW_ESTIMATE),
   );
-  const openIndex = openId ? sorted.findIndex((tr) => tr.id === openId) : -1;
-
-  const getItemSize = useMemo(
-    () => (_index: number, item: Track) =>
-      item.id === openId ? ROW_OPEN_ESTIMATE : ROW_ESTIMATE,
-    [openId],
-  );
 
   const renderRow = (track: Track) => (
     <TrackRow
       key={track.id}
       track={track}
-      open={openId === track.id}
       t={t}
       fmt={fmt}
-      onToggleOpen={onToggleOpen}
+      onOpen={onOpen}
       onToggleVisible={toggleTrack}
       onRemove={removeTrack}
     />
@@ -638,9 +623,7 @@ export const TrackList = () => {
           className="track-list track-list--virtual"
           items={sorted}
           estimateSize={ROW_ESTIMATE}
-          getItemSize={getItemSize}
           height={listHeight}
-          scrollToIndex={openIndex >= 0 ? openIndex : null}
           getKey={(tr) => tr.id}
           renderItem={(track) => renderRow(track)}
           ariaLabel={t.sections.tracks.title}
@@ -650,6 +633,8 @@ export const TrackList = () => {
           {sorted.map((track) => renderRow(track))}
         </div>
       )}
+
+      <TrackDetailModal track={selectedTrack} onClose={() => setSelectedId(null)} />
     </div>
   );
 };

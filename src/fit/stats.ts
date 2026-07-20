@@ -315,3 +315,161 @@ export const averageMetricSeries = (
   }
   return out;
 };
+
+/* ───────────────────────────── Зоны пульса ───────────────────────────── */
+
+/** Одна зона пульса: индекс 1–5, границы (уд/мин) и время в ней (с). */
+export interface HrZone {
+  zone: number;
+  min: number;
+  max: number;
+  time: number;
+}
+
+/** Цвета зон 1→5 (совпадают с примером устройства). */
+export const HR_ZONE_COLORS = ['#a78bfa', '#5ec8f2', '#4ade80', '#f2a35e', '#f25e8a'];
+
+/** Нижние пороги зон как доля от макс. пульса: 50/60/70/80/90/100 %. */
+const ZONE_PCTS = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
+
+/** Границы 5 зон пульса [min, max] уд/мин от максимального пульса. */
+export const hrZoneBounds = (maxHr: number): [number, number][] => {
+  const b: [number, number][] = [];
+  for (let i = 0; i < 5; i++) {
+    const lo = Math.round(maxHr * ZONE_PCTS[i]);
+    const hi = i === 4 ? maxHr : Math.round(maxHr * ZONE_PCTS[i + 1]) - 1;
+    b.push([lo, hi]);
+  }
+  return b;
+};
+
+/**
+ * Время (с) в каждой зоне — сумма интервалов между точками, где пульс попал
+ * в зону. Большие пропуски (паузы > 60 с) пропускаем.
+ */
+export const timeInZones = (points: TrackPoint[], bounds: [number, number][]): number[] => {
+  const times = new Array(bounds.length).fill(0);
+  for (let i = 1; i < points.length; i++) {
+    const hr = points[i].hr;
+    if (hr === undefined) continue;
+    const dt = points[i].t - points[i - 1].t;
+    if (dt <= 0 || dt > 60) continue;
+    for (let k = bounds.length - 1; k >= 0; k--) {
+      if (hr >= bounds[k][0]) {
+        times[k] += dt;
+        break;
+      }
+    }
+  }
+  return times;
+};
+
+/**
+ * Зоны пульса трека. Время берём из устройства (summary.hrZoneTimes), если
+ * писалось — иначе считаем по точкам. Границы — от максимального пульса.
+ */
+export const computeHrZones = (track: Track, maxHrOverride?: number): HrZone[] | null => {
+  const maxHr = maxHrOverride ?? track.summary.maxHr;
+  if (!maxHr || maxHr <= 0) return null;
+  const bounds = hrZoneBounds(maxHr);
+  const device = track.summary.hrZoneTimes;
+  const times =
+    device && device.length === 5 && device.some((v) => v > 0)
+      ? device
+      : track.points.some((p) => p.hr !== undefined)
+        ? timeInZones(track.points, bounds)
+        : null;
+  if (!times || times.every((t) => t === 0)) return null;
+  return bounds.map(([min, max], i) => ({ zone: i + 1, min, max, time: times[i] }));
+};
+
+/** Сумма времени в зонах по всем трекам; границы — от общего макс. пульса. */
+export const aggregateHrZones = (tracks: Track[]): HrZone[] | null => {
+  const maxHr = Math.max(0, ...tracks.map((t) => t.summary.maxHr ?? 0));
+  if (maxHr <= 0) return null;
+  const bounds = hrZoneBounds(maxHr);
+  const total = new Array(5).fill(0);
+  let any = false;
+  for (const tr of tracks) {
+    const z = computeHrZones(tr);
+    if (!z) continue;
+    for (let i = 0; i < 5; i++) total[i] += z[i].time;
+    any = true;
+  }
+  if (!any || total.every((t) => t === 0)) return null;
+  return bounds.map(([min, max], i) => ({ zone: i + 1, min, max, time: total[i] }));
+};
+
+/* ───────────────────────── Живые метрики (таймлайн) ───────────────────── */
+
+/** Снимок состояния трека на выбранной точке таймлайна. */
+export interface LiveMetrics {
+  index: number;
+  /** Секунд от старта = points[i].t. */
+  elapsed: number;
+  /** Пройденная дистанция, м = points[i].dist. */
+  distance: number;
+  /** км/ч */
+  speed?: number;
+  /** мин/км */
+  pace?: number;
+  hr?: number;
+  /** Высота, м. */
+  alt?: number;
+  /** Накопленный набор высоты до точки, м. */
+  ascent: number;
+}
+
+/**
+ * Префикс-суммы положительного набора высоты: считаем один раз на трек,
+ * затем индексируем за O(1) при перетаскивании таймлайна.
+ */
+export const ascentPrefix = (track: Track): Float64Array => {
+  const pts = track.points;
+  const out = new Float64Array(pts.length);
+  let acc = 0;
+  let prevAlt: number | undefined;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i].alt;
+    if (a !== undefined && prevAlt !== undefined && a > prevAlt) acc += a - prevAlt;
+    if (a !== undefined) prevAlt = a;
+    out[i] = acc;
+  }
+  return out;
+};
+
+/**
+ * Метрики трека в точке index. Чистая функция; O(1), если передан prefix.
+ * Для hr/alt берётся ближайшее известное значение (в прорежённых треках
+ * отдельные точки могут не иметь показания датчика).
+ */
+export const liveMetricsAt = (
+  track: Track,
+  index: number,
+  prefix?: Float64Array
+): LiveMetrics => {
+  const pts = track.points;
+  const i = Math.max(0, Math.min(pts.length - 1, index));
+  const p = pts[i];
+  const nearest = (key: 'hr' | 'alt'): number | undefined => {
+    if (p[key] !== undefined) return p[key];
+    for (let d = 1; d < pts.length; d++) {
+      const before = pts[i - d];
+      if (before && before[key] !== undefined) return before[key];
+      const after = pts[i + d];
+      if (after && after[key] !== undefined) return after[key];
+    }
+    return undefined;
+  };
+  const asc = prefix ? prefix[i] : ascentPrefix(track)[i];
+  return {
+    index: i,
+    elapsed: p.t,
+    distance: p.dist,
+    speed: p.speed,
+    pace: p.pace,
+    hr: nearest('hr'),
+    alt: nearest('alt'),
+    ascent: asc ?? 0,
+  };
+};

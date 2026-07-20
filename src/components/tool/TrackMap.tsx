@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
-import type { Map as LeafletMap, LayerGroup } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import type { LatLngBounds } from 'leaflet';
 import { thinLatLngs } from '../../fit/thinPoints';
 import type { Track } from '../../fit/types';
 import { useI18n, sportLabel } from '../../i18n';
-import { mapHandle } from '../../state/mapHandle';
+import { DEFAULT_OVERVIEW_LAYER } from '../../fit/mapLayers';
+import { MapCanvas } from './MapCanvas';
+import type { MapCanvasHandle } from './MapCanvas';
 
 interface TrackMapProps {
   tracks: Track[];
@@ -12,26 +13,18 @@ interface TrackMapProps {
   busy?: boolean;
 }
 
-/* Тёмные тайлы CARTO — под pre-dawn палитру Dimension. */
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const TILE_ATTRIBUTION = 'fit.igroza.su';
-
 /** Макс. точек на полилинию; для 200+ треков иначе Leaflet подвисает. */
 const MAP_POINTS = 320;
 
 /**
- * Карта треков (Leaflet). Скрытые из анализа треки на карте не показываются.
- * Библиотека подгружается динамически в useEffect — компонент безопасен
- * для SSR/prerender.
+ * Обзорная карта всех треков (Leaflet, через общий MapCanvas). Скрытые из
+ * анализа треки не показываются. Регистрируется в mapHandle — экспорт PNG
+ * снимает именно её текущий вид.
  */
 export const TrackMap = ({ tracks, busy = false }: TrackMapProps) => {
   const { t, fmt } = useI18n();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
-  const layersRef = useRef<LayerGroup | null>(null);
-  const leafletRef = useRef<typeof import('leaflet') | null>(null);
-  /** Рамка всех видимых треков — для кнопки центровки. */
-  const boundsRef = useRef<import('leaflet').LatLngBounds | null>(null);
+  const handleRef = useRef<MapCanvasHandle | null>(null);
+  const boundsRef = useRef<LatLngBounds | null>(null);
   const tracksRef = useRef(tracks);
   tracksRef.current = tracks;
   const tRef = useRef(t);
@@ -40,11 +33,9 @@ export const TrackMap = ({ tracks, busy = false }: TrackMapProps) => {
   fmtRef.current = fmt;
 
   const drawTracks = () => {
-    const L = leafletRef.current;
-    const map = mapRef.current;
-    const layers = layersRef.current;
-    if (!L || !map || !layers) return;
-
+    const handle = handleRef.current;
+    if (!handle) return;
+    const { L, map, layers } = handle;
     const current = tracksRef.current;
     const dict = tRef.current;
     const format = fmtRef.current;
@@ -72,7 +63,6 @@ export const TrackMap = ({ tracks, busy = false }: TrackMapProps) => {
           track.summary.distance
         )}<br/>${format.date(track.summary.startTime)}`
       );
-      // Старт/финиш только если треков немного — иначе 400+ маркеров тормозят.
       if (showEndpoints) {
         const dot = (latlng: [number, number], color: string, title: string) =>
           L.circleMarker(latlng, {
@@ -98,54 +88,11 @@ export const TrackMap = ({ tracks, busy = false }: TrackMapProps) => {
   };
 
   const recenter = () => {
-    if (mapRef.current && boundsRef.current) {
-      mapRef.current.fitBounds(boundsRef.current, { padding: [32, 32] });
+    const map = handleRef.current?.map;
+    if (map && boundsRef.current) {
+      map.fitBounds(boundsRef.current, { padding: [32, 32] });
     }
   };
-
-  // Инициализация карты — один раз, после монтирования.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const L = await import('leaflet');
-      if (cancelled || !containerRef.current || mapRef.current) return;
-      leafletRef.current = L;
-      const map = L.map(containerRef.current, {
-        zoomControl: true,
-        attributionControl: true,
-        scrollWheelZoom: false,
-        preferCanvas: true,
-      });
-      map.on('focus click', () => map.scrollWheelZoom.enable());
-      map.on('blur', () => map.scrollWheelZoom.disable());
-      L.tileLayer(TILE_URL, {
-        attribution: TILE_ATTRIBUTION,
-        maxZoom: 19,
-        crossOrigin: true,
-      }).addTo(map);
-      map.setView([55.75, 37.62], 4);
-      layersRef.current = L.layerGroup().addTo(map);
-      mapRef.current = map;
-      mapHandle.map = map;
-      mapHandle.container = containerRef.current;
-      drawTracks();
-      const attribution = document.querySelector(
-        '.leaflet-control-attribution.leaflet-control'
-      );
-      if (attribution instanceof HTMLElement) {
-        attribution.style.display = 'none';
-      }
-    })();
-    return () => {
-      cancelled = true;
-      mapHandle.map = null;
-      mapHandle.container = null;
-      mapRef.current?.remove();
-      mapRef.current = null;
-      layersRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Перерисовка только когда загрузка закончилась (или треки сменились без busy).
   useEffect(() => {
@@ -157,8 +104,16 @@ export const TrackMap = ({ tracks, busy = false }: TrackMapProps) => {
   const gpsCount = tracks.filter((tr) => tr.visible && tr.hasGps).length;
 
   return (
-    <div className="track-map glass" data-reveal>
-      <div ref={containerRef} className="track-map__canvas" />
+    <MapCanvas
+      className="track-map glass"
+      registerHandle
+      defaultLayer={DEFAULT_OVERVIEW_LAYER}
+      scrollWheelZoom={false}
+      onReady={(h) => {
+        handleRef.current = h;
+        drawTracks();
+      }}
+    >
       {busy && (
         <div className="track-map__busy">
           <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />
@@ -181,6 +136,6 @@ export const TrackMap = ({ tracks, busy = false }: TrackMapProps) => {
           <span>{t.sections.map.noGps}</span>
         </div>
       )}
-    </div>
+    </MapCanvas>
   );
 };

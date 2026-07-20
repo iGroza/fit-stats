@@ -26,9 +26,10 @@ export const makeFmt = (d: Dict): Fmt => {
   const u = d.units;
   const paceBare = (kmh?: number): string => {
     if (!kmh || kmh <= 0) return '—';
-    const secPerKm = 3600 / kmh;
-    const m = Math.floor(secPerKm / 60);
-    const s = Math.round(secPerKm % 60);
+    // Округляем ВСЕ секунды сразу, иначе 419.99 с/км даёт «6:60» вместо «7:00».
+    const total = Math.round(3600 / kmh);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
     return `${m}:${String(s).padStart(2, '0')}`;
   };
   return {

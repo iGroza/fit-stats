@@ -131,7 +131,7 @@ export const ru = {
     tracks: {
       eyebrow: 'Файлы',
       title: 'Загруженные треки',
-      lead: 'Кнопка с глазом убирает трек из сводки, карты и графиков — и возвращает обратно. Разверните трек — детальные метрики и отсечки.',
+      lead: 'Кнопка с глазом убирает трек из сводки, карты и графиков — и возвращает обратно. Откройте трек — карта с таймлайном, детальные метрики и отсечки.',
       clear: 'Очистить список',
       sort: 'Сортировка',
       showAll: 'Показать все',
@@ -160,6 +160,15 @@ export const ru = {
       start: 'Старт',
       finish: 'Финиш',
       hiddenBadge: 'скрыт из анализа',
+      fullscreen: 'На весь экран',
+      exitFullscreen: 'Свернуть',
+      layer: 'Слой карты',
+      layers: {
+        dark: 'Тёмная',
+        topo: 'Рельеф',
+        osm: 'Дороги',
+        'esri-sat': 'Спутник',
+      },
     },
     charts: {
       eyebrow: 'Анализ',
@@ -175,6 +184,22 @@ export const ru = {
       busy: 'Графики появятся после загрузки…',
       limited: (shown: number, total: number) =>
         `На графике ${shown} из ${total} треков (самые длинные). Переключитесь на «Среднее по всем», чтобы учесть все.`,
+    },
+    detail: {
+      title: 'Детали тренировки',
+      close: 'Закрыть',
+      play: 'Проигрывать',
+      pause: 'Пауза',
+      timeline: 'Таймлайн трека',
+      live: {
+        elapsed: 'Время',
+        distance: 'Пройдено',
+        speed: 'Скорость',
+        pace: 'Темп',
+        hr: 'Пульс',
+        alt: 'Высота',
+        ascent: 'Набор',
+      },
     },
   },
 
@@ -260,6 +285,12 @@ export const ru = {
     min: 'мин',
     aerobic: 'аэробный',
     anaerobic: 'анаэробный',
+  },
+
+  hrZones: {
+    title: 'Зоны сердечного ритма',
+    zone: (n: number) => `Диапазон ${n}`,
+    hint: 'Сколько времени пульс держался в каждой зоне. Границы — доли от максимального пульса (50–60–70–80–90–100 %). Время берётся из данных устройства, если они есть.',
   },
 
   splits: {
@@ -389,6 +420,10 @@ export const ru = {
     splitsPace: 'Темп, мин/км',
     splitsSpeed: 'Скорость, км/ч',
     splitsTotalLabel: 'Итого',
+    hrZonesSheet: 'Зоны пульса',
+    hrZonesSubtitle: 'время в зонах сердечного ритма',
+    hrZonesAll: 'Все треки',
+    hrZonesHeader: ['Файл', 'Зона', 'Диапазон, уд/мин', 'Время', 'Доля, %'],
   },
 };
 
@@ -511,7 +546,7 @@ export const en: Dict = {
     tracks: {
       eyebrow: 'Files',
       title: 'Loaded tracks',
-      lead: 'The eye button removes a track from the summary, map and charts — and brings it back. Expand a track for detailed metrics and splits.',
+      lead: 'The eye button removes a track from the summary, map and charts — and brings it back. Open a track for a map with a timeline, detailed metrics and splits.',
       clear: 'Clear list',
       sort: 'Sort',
       showAll: 'Show all',
@@ -540,6 +575,15 @@ export const en: Dict = {
       start: 'Start',
       finish: 'Finish',
       hiddenBadge: 'hidden from analysis',
+      fullscreen: 'Fullscreen',
+      exitFullscreen: 'Exit fullscreen',
+      layer: 'Base layer',
+      layers: {
+        dark: 'Dark',
+        topo: 'Relief',
+        osm: 'Roads',
+        'esri-sat': 'Satellite',
+      },
     },
     charts: {
       eyebrow: 'Analysis',
@@ -555,6 +599,22 @@ export const en: Dict = {
       busy: 'Charts will appear after loading…',
       limited: (shown: number, total: number) =>
         `Showing ${shown} of ${total} tracks (longest ones). Switch to “Average of all” to include every track.`,
+    },
+    detail: {
+      title: 'Workout details',
+      close: 'Close',
+      play: 'Play',
+      pause: 'Pause',
+      timeline: 'Track timeline',
+      live: {
+        elapsed: 'Time',
+        distance: 'Distance',
+        speed: 'Speed',
+        pace: 'Pace',
+        hr: 'HR',
+        alt: 'Elevation',
+        ascent: 'Ascent',
+      },
     },
   },
 
@@ -625,6 +685,12 @@ export const en: Dict = {
     min: 'min',
     aerobic: 'aerobic',
     anaerobic: 'anaerobic',
+  },
+
+  hrZones: {
+    title: 'Heart rate zones',
+    zone: (n: number) => `Zone ${n}`,
+    hint: 'Time spent with your heart rate in each zone. Bounds are fractions of max HR (50–60–70–80–90–100%). Time comes from the device data when available.',
   },
 
   splits: {
@@ -742,6 +808,10 @@ export const en: Dict = {
     splitsPace: 'Pace, min/km',
     splitsSpeed: 'Speed, km/h',
     splitsTotalLabel: 'Total',
+    hrZonesSheet: 'HR zones',
+    hrZonesSubtitle: 'time in heart rate zones',
+    hrZonesAll: 'All tracks',
+    hrZonesHeader: ['File', 'Zone', 'Range, bpm', 'Time', 'Share, %'],
   },
 };
 
