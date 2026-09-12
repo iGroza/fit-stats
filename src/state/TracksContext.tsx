@@ -34,6 +34,8 @@ export interface ParseError {
 }
 
 interface TracksState {
+  surveyReminder: boolean;
+  openSurvey: () => void;
   tracks: Track[];
   /** Только видимые (участвуют в сводке/графиках). */
   visible: Track[];
@@ -82,13 +84,38 @@ export const TracksProvider = ({ children }: { children: ReactNode }) => {
   const { t } = useI18n();
   const toast = useToast();
   const [surveyOpen, setSurveyOpen] = useState(false);
-  const surveyCompleted = useRef(false);
-  const closeSurvey = useCallback(() => setSurveyOpen(false), []);
+  const [surveyReminder, setSurveyReminder] = useState(false);
+  const surveyStatus = useRef<'sent' | 'dismissed' | null>(null);
+  const openSurvey = useCallback(() => {
+    if (surveyStatus.current !== 'sent') setSurveyOpen(true);
+  }, []);
+  const closeSurvey = useCallback(() => {
+    if (surveyStatus.current !== 'sent') {
+      surveyStatus.current = 'dismissed';
+      setSurveyReminder(true);
+      try { localStorage.setItem('fit-stats:survey:v1', 'dismissed'); } catch { /* storage is optional */ }
+    }
+    setSurveyOpen(false);
+  }, []);
   useEffect(() => {
-    try { surveyCompleted.current = localStorage.getItem('fit-stats:survey:v1') === 'sent'; } catch { /* storage is optional */ }
+    try {
+      const status = localStorage.getItem('fit-stats:survey:v1');
+      surveyStatus.current = status === 'sent' || status === 'dismissed' ? status : null;
+      setSurveyReminder(status === 'dismissed');
+    } catch { /* storage is optional */ }
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'fit-stats:survey:v1' && (event.newValue === 'sent' || event.newValue === 'dismissed')) {
+        surveyStatus.current = event.newValue;
+        setSurveyReminder(event.newValue === 'dismissed');
+        setSurveyOpen(false);
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
   const completeSurvey = useCallback(() => {
-    surveyCompleted.current = true;
+    surveyStatus.current = 'sent';
+    setSurveyReminder(false);
     try { localStorage.setItem('fit-stats:survey:v1', 'sent'); } catch { /* storage is optional */ }
   }, []);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -233,7 +260,7 @@ export const TracksProvider = ({ children }: { children: ReactNode }) => {
       }
       if (total > 0) {
         toast.success(t.toasts.loadedTitle, t.toasts.loadedMsg(total));
-        if (!surveyCompleted.current) setSurveyOpen(true);
+        if (!surveyStatus.current) setSurveyOpen(true);
         // Файлы сразу в анализе (visible=true) — показываем список, не историю.
         scrollToTracks();
       }
@@ -347,6 +374,8 @@ export const TracksProvider = ({ children }: { children: ReactNode }) => {
 
   const value = useMemo(
     () => ({
+      surveyReminder: surveyReminder && !surveyOpen,
+      openSurvey,
       tracks,
       visible,
       busyCount,
@@ -363,6 +392,9 @@ export const TracksProvider = ({ children }: { children: ReactNode }) => {
       deleteManyFromHistory,
     }),
     [
+      surveyReminder,
+      surveyOpen,
+      openSurvey,
       tracks,
       visible,
       busyCount,

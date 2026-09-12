@@ -24,7 +24,7 @@ const FEATURE_ICONS = [
 
 export const HomePage = () => {
   const { t } = useI18n();
-  const { tracks, visible, busyCount, errors, addFiles } = useTracks();
+  const { tracks, visible, busyCount, errors, addFiles, surveyReminder, openSurvey } = useTracks();
   const busy = busyCount > 0;
 
   const totals = useMemo(() => computeTotals(visible), [visible]);
@@ -67,6 +67,13 @@ export const HomePage = () => {
             </p>
             <div data-reveal data-reveal-early data-reveal-delay="2">
               <Dropzone onFiles={addFiles} busyCount={busyCount} />
+              {surveyReminder && <aside className="runner-survey-reminder" lang="ru" aria-label="Опрос бегунов">
+                <div>
+                  <strong>Поможете сделать FIT Stats полезнее?</strong>
+                  <p>Вы ещё не отправили анкету. Расскажите о своём опыте — это займёт около 3 минут.</p>
+                </div>
+                <button className="btn" type="button" onClick={openSurvey}>Пройти опрос</button>
+              </aside>}
               {errors.length > 0 && (
                 <ul className="parse-errors" role="alert">
                   {errors.slice(0, 12).map((e) => {

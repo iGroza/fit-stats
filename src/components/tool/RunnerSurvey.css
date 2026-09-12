@@ -43,7 +43,23 @@
 .runner-survey__consent p { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; }
 .runner-survey__actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 28px; }
 .runner-survey__error { color: #f7a4ad; margin-top: 20px; }
+.runner-survey__field-error { display: block; color: #f7a4ad; font-size: 14px; margin-top: 8px; }
+.runner-survey input[aria-invalid=true], .runner-survey textarea[aria-invalid=true],
+.runner-survey__question[aria-invalid=true] .runner-survey__option,
+.runner-survey__option:has(input[aria-invalid=true]) { border-color: #f7a4ad; }
+.runner-survey input:focus-visible, .runner-survey textarea:focus-visible,
+.runner-survey button:focus-visible { outline: 2px solid var(--color-paper); outline-offset: 4px; }
+.runner-survey__option:focus-within { outline: 2px solid var(--color-paper); outline-offset: 2px; }
+.runner-survey input, .runner-survey textarea { scroll-margin-top: 100px; }
 .runner-survey button:disabled { opacity: .5; cursor: wait; }
+.runner-survey-reminder {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 20px;
+  padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-card);
+  background: var(--glass-bg);
+}
+.runner-survey-reminder > div { flex: 1 1 240px; }
+.runner-survey-reminder p { margin: 8px 0 0; font-size: 14px; color: var(--text-secondary); }
+.runner-survey-reminder button { flex-shrink: 0; }
 @media (max-width: 600px) {
   .runner-survey__body { padding: 32px 20px 48px; }
   .runner-survey__grid { grid-template-columns: 1fr; }
