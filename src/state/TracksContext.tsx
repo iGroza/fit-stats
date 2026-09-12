@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { useToast } from '../components/common/Toast';
+import { RunnerSurvey } from '../components/tool/RunnerSurvey';
 import { TRACK_COLORS } from '../config';
 import { parseTrackBuffer } from '../fit/parseTrack';
 import {
@@ -80,6 +81,16 @@ const TRACK_FLUSH = 10;
 export const TracksProvider = ({ children }: { children: ReactNode }) => {
   const { t } = useI18n();
   const toast = useToast();
+  const [surveyOpen, setSurveyOpen] = useState(false);
+  const surveyCompleted = useRef(false);
+  const closeSurvey = useCallback(() => setSurveyOpen(false), []);
+  useEffect(() => {
+    try { surveyCompleted.current = localStorage.getItem('fit-stats:survey:v1') === 'sent'; } catch { /* storage is optional */ }
+  }, []);
+  const completeSurvey = useCallback(() => {
+    surveyCompleted.current = true;
+    try { localStorage.setItem('fit-stats:survey:v1', 'sent'); } catch { /* storage is optional */ }
+  }, []);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [busyCount, setBusyCount] = useState(0);
   const [errors, setErrors] = useState<ParseError[]>([]);
@@ -222,6 +233,7 @@ export const TracksProvider = ({ children }: { children: ReactNode }) => {
       }
       if (total > 0) {
         toast.success(t.toasts.loadedTitle, t.toasts.loadedMsg(total));
+        if (!surveyCompleted.current) setSurveyOpen(true);
         // Файлы сразу в анализе (visible=true) — показываем список, не историю.
         scrollToTracks();
       }
@@ -368,5 +380,5 @@ export const TracksProvider = ({ children }: { children: ReactNode }) => {
     ]
   );
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={value}>{children}<RunnerSurvey open={surveyOpen} onClose={closeSurvey} onComplete={completeSurvey} /></Ctx.Provider>;
 };

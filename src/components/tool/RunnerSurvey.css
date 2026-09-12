@@ -1,0 +1,51 @@
+.runner-survey {
+  position: fixed; inset: 0; width: 100%; height: 100%; height: 100dvh;
+  max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+  color: var(--text); background: var(--bg); font-family: var(--font-body);
+  overflow-y: auto; overscroll-behavior: contain; color-scheme: dark;
+}
+.runner-survey::backdrop { background: var(--bg); }
+.runner-survey__header {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px max(20px, env(safe-area-inset-right)) 16px max(20px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1;
+  background: rgba(10,10,10,.88); backdrop-filter: blur(22px); font-family: var(--font-ui);
+}
+.runner-survey__body { max-width: 860px; margin: auto; padding: 64px 24px max(64px, env(safe-area-inset-bottom)); }
+.runner-survey__intro { margin-bottom: 48px; position: relative; }
+.runner-survey__intro::before { content: ''; position: absolute; inset: -40px 0; background: radial-gradient(ellipse at top, rgba(107,98,242,.12), transparent 65%); pointer-events: none; }
+.runner-survey__eyebrow { font-family: var(--font-ui); font-size: 12px; letter-spacing: .16em; color: var(--text-secondary); }
+.runner-survey h1 { font-size: clamp(32px, 6vw, 56px); line-height: 1.1; font-weight: 400; letter-spacing: -.035em; margin: 20px 0 24px; }
+.runner-survey__intro p { color: var(--text-secondary); margin-bottom: 16px; }
+.runner-survey__muted { color: var(--text-secondary); font-size: 14px; }
+.runner-survey__fields { border: 0; padding: 0; min-width: 0; }
+.runner-survey__section-title { font: 500 14px var(--font-ui); letter-spacing: .04em; color: var(--text-secondary); margin: 24px 0; padding: 0; }
+.runner-survey__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+.runner-survey__grid label, .runner-survey__custom { display: grid; gap: 8px; }
+.runner-survey input:not([type=radio]):not([type=checkbox]):not([type=range]), .runner-survey textarea {
+  width: 100%; min-width: 0; padding: 14px 16px; border: 1px solid var(--border-strong);
+  border-radius: var(--radius-input); background: var(--surface); color: var(--text); font: inherit;
+}
+.runner-survey textarea { resize: vertical; }
+.runner-survey__question { min-width: 0; border: 0; padding: 0; margin: 0 0 32px; }
+.runner-survey__question legend { padding: 0; margin-bottom: 12px; font-size: 18px; }
+.runner-survey__question p { margin-bottom: 12px; }
+.runner-survey__options { display: grid; gap: 8px; }
+.runner-survey__option { display: flex; align-items: flex-start; gap: 12px; padding: 15px 18px; border: 1px solid var(--border); border-radius: 20px; background: var(--glass-bg); cursor: pointer; }
+.runner-survey__option:has(input:checked) { border-color: rgba(229,229,229,.4); background: var(--color-ink); }
+.runner-survey input[type=radio], .runner-survey input[type=checkbox] { flex-shrink: 0; width: 18px; height: 18px; margin-top: 4px; accent-color: var(--color-paper); }
+.runner-survey__custom { margin-top: 16px; }
+.runner-survey__range { display: grid; gap: 12px; margin-bottom: 28px; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--glass-bg); }
+.runner-survey__range output { font: 400 32px var(--font-ui); }
+.runner-survey__range input { width: 100%; accent-color: var(--color-paper); min-height: 24px; }
+.runner-survey__scale { display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 13px; }
+.runner-survey__consent { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); }
+.runner-survey__consent p { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; }
+.runner-survey__actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 28px; }
+.runner-survey__error { color: #f7a4ad; margin-top: 20px; }
+.runner-survey button:disabled { opacity: .5; cursor: wait; }
+@media (max-width: 600px) {
+  .runner-survey__body { padding: 32px 20px 48px; }
+  .runner-survey__grid { grid-template-columns: 1fr; }
+  .runner-survey__option { padding: 14px; }
+}
